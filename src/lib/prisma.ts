@@ -8,7 +8,9 @@ declare global {
 function getPrismaInstance(): PrismaClient {
   if (global._prisma) return global._prisma;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const client = new (PrismaClient as any)();
+  const client = new (PrismaClient as any)({
+    datasourceUrl: process.env.DATABASE_URL,
+  });
   if (process.env.NODE_ENV !== "production") {
     global._prisma = client;
   }
