@@ -36,7 +36,7 @@ export function MedicineForm() {
   const [times, setTimes] = useState<string[]>(["08:00"]);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [hasSchedule, setHasSchedule] = useState(true);
-  const [hasInventory, setHasInventory] = useState(false);
+  const [hasInventory, setHasInventory] = useState(true);
 
   const {
     register,
