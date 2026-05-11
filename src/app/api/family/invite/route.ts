@@ -100,16 +100,14 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Esta invitación no es para tu cuenta" }, { status: 403 });
   }
 
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: session.user.id },
-      data: { familyGroupId: invite.familyGroupId },
-    }),
-    prisma.familyInvite.update({
-      where: { id: invite.id },
-      data: { status: "ACCEPTED" },
-    }),
-  ]);
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { familyGroupId: invite.familyGroupId },
+  });
+  await prisma.familyInvite.update({
+    where: { id: invite.id },
+    data: { status: "ACCEPTED" },
+  });
 
   return NextResponse.json({ success: true });
 }

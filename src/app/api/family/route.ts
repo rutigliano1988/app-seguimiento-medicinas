@@ -39,16 +39,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Ya tienes un grupo familiar" }, { status: 409 });
   }
 
-  const group = await prisma.$transaction(async (tx) => {
-    const g = await tx.familyGroup.create({
-      data: { name: parsed.data.name, adminId: session.user!.id as string },
-    });
-    await tx.user.update({
-      where: { id: session.user!.id as string },
-      data: { familyGroupId: g.id },
-    });
-    return g;
+  const g = await prisma.familyGroup.create({
+    data: { name: parsed.data.name, adminId: session.user!.id as string },
   });
+  await prisma.user.update({
+    where: { id: session.user!.id as string },
+    data: { familyGroupId: g.id },
+  });
+  const group = g;
 
   return NextResponse.json(group, { status: 201 });
 }

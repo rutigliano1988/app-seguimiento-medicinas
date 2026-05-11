@@ -31,47 +31,40 @@ export async function POST(req: NextRequest) {
   });
   if (!medicine) return NextResponse.json({ error: "Medicina no encontrada" }, { status: 404 });
 
-  const log = await prisma.$transaction(async (tx) => {
-    const entry = await tx.doseLog.create({
-      data: {
-        userId: session.user!.id as string,
-        medicineId,
-        scheduleId,
-        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-        status,
-        notes,
-        dosesTaken,
-      },
+  const log = await prisma.doseLog.create({
+    data: {
+      userId: session.user!.id as string,
+      medicineId,
+      scheduleId,
+      scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+      status,
+      notes,
+      dosesTaken,
+    },
+  });
+
+  if (status === "TAKEN" && medicine.inventory) {
+    const newStock = Math.max(0, medicine.inventory.currentStock - dosesTaken);
+    await prisma.inventory.update({
+      where: { medicineId },
+      data: { currentStock: newStock },
     });
 
-    // Decrement inventory if dose was taken
-    if (status === "TAKEN" && medicine.inventory) {
-      const newStock = Math.max(0, medicine.inventory.currentStock - dosesTaken);
-      await tx.inventory.update({
-        where: { medicineId },
-        data: { currentStock: newStock },
-      });
-
-      // Trigger low-stock push if threshold crossed
-      if (
-        medicine.inventory.currentStock > medicine.inventory.lowStockThreshold &&
-        newStock <= medicine.inventory.lowStockThreshold
-      ) {
-        // Fire-and-forget outside transaction
-        const uid = session.user!.id as string;
-        setImmediate(() =>
-          sendPushToUser(uid, {
-            title: "Stock bajo",
-            body: `Quedan ${newStock} ${medicine.inventory!.unit} de ${medicine.name}`,
-            url: "/inventory",
-            medicineId,
-          }).catch(console.error)
-        );
-      }
+    if (
+      medicine.inventory.currentStock > medicine.inventory.lowStockThreshold &&
+      newStock <= medicine.inventory.lowStockThreshold
+    ) {
+      const uid = session.user!.id as string;
+      setImmediate(() =>
+        sendPushToUser(uid, {
+          title: "Stock bajo",
+          body: `Quedan ${newStock} ${medicine.inventory!.unit} de ${medicine.name}`,
+          url: "/inventory",
+          medicineId,
+        }).catch(console.error)
+      );
     }
-
-    return entry;
-  });
+  }
 
   return NextResponse.json(log, { status: 201 });
 }

@@ -42,46 +42,44 @@ export async function POST(req: NextRequest) {
 
   const { name, genericName, dosage, form, instructions, color, schedule, inventory } = parsed.data;
 
-  const medicine = await prisma.$transaction(async (tx) => {
-    const med = await tx.medicine.create({
+  const med = await prisma.medicine.create({
+    data: {
+      userId: session.user!.id as string,
+      name,
+      genericName,
+      dosage,
+      form,
+      instructions,
+      color,
+    },
+  });
+
+  if (schedule) {
+    await prisma.schedule.create({
       data: {
-        userId: session.user!.id as string,
-        name,
-        genericName,
-        dosage,
-        form,
-        instructions,
-        color,
+        medicineId: med.id,
+        frequency: schedule.frequency,
+        times: schedule.times,
+        daysOfWeek: schedule.daysOfWeek,
+        startDate: new Date(schedule.startDate),
+        endDate: schedule.endDate ? new Date(schedule.endDate) : null,
       },
     });
+  }
 
-    if (schedule) {
-      await tx.schedule.create({
-        data: {
-          medicineId: med.id,
-          frequency: schedule.frequency,
-          times: schedule.times,
-          daysOfWeek: schedule.daysOfWeek,
-          startDate: new Date(schedule.startDate),
-          endDate: schedule.endDate ? new Date(schedule.endDate) : null,
-        },
-      });
-    }
+  if (inventory) {
+    await prisma.inventory.create({
+      data: {
+        medicineId: med.id,
+        currentStock: inventory.currentStock,
+        unit: inventory.unit,
+        lowStockThreshold: inventory.lowStockThreshold,
+        expiryDate: inventory.expiryDate ? new Date(inventory.expiryDate) : null,
+      },
+    });
+  }
 
-    if (inventory) {
-      await tx.inventory.create({
-        data: {
-          medicineId: med.id,
-          currentStock: inventory.currentStock,
-          unit: inventory.unit,
-          lowStockThreshold: inventory.lowStockThreshold,
-          expiryDate: inventory.expiryDate ? new Date(inventory.expiryDate) : null,
-        },
-      });
-    }
-
-    return med;
-  });
+  const medicine = med;
 
   return NextResponse.json(medicine, { status: 201 });
 }
