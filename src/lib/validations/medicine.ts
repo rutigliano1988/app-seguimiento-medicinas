@@ -20,9 +20,9 @@ export const medicineFormSchema = z.object({
 
   // Step 3: Inventory (optional)
   inventory: z.object({
-    currentStock: z.number().min(0, "El stock no puede ser negativo"),
+    currentStock: z.coerce.number().min(0, "El stock no puede ser negativo"),
     unit: z.string().min(1, "La unidad es requerida"),
-    lowStockThreshold: z.number().min(0).default(7),
+    lowStockThreshold: z.coerce.number().min(0),
     expiryDate: z.string().optional(),
   }).optional(),
 });

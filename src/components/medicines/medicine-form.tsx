@@ -62,8 +62,8 @@ export function MedicineForm() {
         startDate: new Date().toISOString().split("T")[0],
       },
       inventory: {
-        currentStock: 0,
-        unit: "pastillas",
+        currentStock: "" as unknown as number,
+        unit: "",
         lowStockThreshold: 7,
       },
     },
@@ -333,7 +333,8 @@ export function MedicineForm() {
                         type="number"
                         min="0"
                         step="0.5"
-                        {...register("inventory.currentStock", { valueAsNumber: true })}
+                        placeholder="ej. 30"
+                        {...register("inventory.currentStock")}
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -346,7 +347,8 @@ export function MedicineForm() {
                     <Input
                       type="number"
                       min="0"
-                      {...register("inventory.lowStockThreshold", { valueAsNumber: true })}
+                      placeholder="ej. 7"
+                      {...register("inventory.lowStockThreshold")}
                     />
                   </div>
                   <div className="space-y-1.5">
