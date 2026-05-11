@@ -26,6 +26,12 @@ const MEDICINE_FORMS = [
   { value: "PATCH", label: "Parche" },
   { value: "OTHER", label: "Otro" },
 ];
+const FREQUENCIES = [
+  { value: "DAILY", label: "Todos los días" },
+  { value: "SPECIFIC_DAYS", label: "Días específicos" },
+  { value: "EVERY_N_HOURS", label: "Cada N horas" },
+  { value: "AS_NEEDED", label: "Según necesidad" },
+];
 const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899"];
 
@@ -161,9 +167,11 @@ export function MedicineForm() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Forma</Label>
-                  <Select defaultValue="TABLET" onValueChange={(v) => setValue("form", v as MedicineFormValues["form"])}>
+                  <Select value={watch("form")} onValueChange={(v) => setValue("form", v as MedicineFormValues["form"])}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <span className="flex flex-1 text-left text-sm">
+                        {MEDICINE_FORMS.find(f => f.value === watch("form"))?.label ?? "Pastilla"}
+                      </span>
                     </SelectTrigger>
                     <SelectContent>
                       {MEDICINE_FORMS.map((f) => (
@@ -216,15 +224,18 @@ export function MedicineForm() {
                   <div className="space-y-1.5">
                     <Label>Frecuencia</Label>
                     <Select
-                      defaultValue="DAILY"
+                      value={frequency}
                       onValueChange={(v) => setValue("schedule.frequency", v as "DAILY" | "SPECIFIC_DAYS" | "EVERY_N_HOURS" | "AS_NEEDED")}
                     >
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger>
+                        <span className="flex flex-1 text-left text-sm">
+                          {FREQUENCIES.find(f => f.value === frequency)?.label ?? "Todos los días"}
+                        </span>
+                      </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="DAILY">Todos los días</SelectItem>
-                        <SelectItem value="SPECIFIC_DAYS">Días específicos</SelectItem>
-                        <SelectItem value="EVERY_N_HOURS">Cada N horas</SelectItem>
-                        <SelectItem value="AS_NEEDED">Según necesidad</SelectItem>
+                        {FREQUENCIES.map((f) => (
+                          <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
