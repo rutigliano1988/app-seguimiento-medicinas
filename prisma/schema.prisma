@@ -1,0 +1,232 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  timezone      String    @default("America/Argentina/Buenos_Aires")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+
+  familyGroupId String?
+  familyGroup   FamilyGroup?       @relation("FamilyMembers", fields: [familyGroupId], references: [id])
+  adminOf       FamilyGroup?       @relation("FamilyAdmin")
+  medicines     Medicine[]
+  doseLogs      DoseLog[]
+  pushSubs      PushSubscription[]
+  sentInvites   FamilyInvite[]     @relation("InviteSender")
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── Family ──────────────────────────────────────────────────────────────────
+
+model FamilyGroup {
+  id        String   @id @default(cuid())
+  name      String
+  adminId   String   @unique
+  createdAt DateTime @default(now())
+
+  admin   User           @relation("FamilyAdmin", fields: [adminId], references: [id])
+  members User[]         @relation("FamilyMembers")
+  invites FamilyInvite[]
+
+  @@map("family_groups")
+}
+
+model FamilyInvite {
+  id            String       @id @default(cuid())
+  token         String       @unique @default(cuid())
+  email         String
+  familyGroupId String
+  senderId      String
+  status        InviteStatus @default(PENDING)
+  expiresAt     DateTime
+  createdAt     DateTime     @default(now())
+
+  familyGroup FamilyGroup @relation(fields: [familyGroupId], references: [id], onDelete: Cascade)
+  sender      User        @relation("InviteSender", fields: [senderId], references: [id])
+
+  @@map("family_invites")
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+// ─── Medicines ───────────────────────────────────────────────────────────────
+
+model Medicine {
+  id           String       @id @default(cuid())
+  userId       String
+  name         String
+  genericName  String?
+  dosage       String
+  form         MedicineForm @default(TABLET)
+  instructions String?
+  color        String?
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schedules Schedule[]
+  doseLogs  DoseLog[]
+  inventory Inventory?
+
+  @@map("medicines")
+}
+
+enum MedicineForm {
+  TABLET
+  CAPSULE
+  LIQUID
+  INJECTION
+  CREAM
+  DROPS
+  INHALER
+  PATCH
+  OTHER
+}
+
+// ─── Schedules ───────────────────────────────────────────────────────────────
+
+model Schedule {
+  id         String    @id @default(cuid())
+  medicineId String
+  frequency  Frequency
+  times      String[]
+  daysOfWeek Int[]
+  startDate  DateTime
+  endDate    DateTime?
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  medicine Medicine  @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  doseLogs DoseLog[]
+
+  @@map("schedules")
+}
+
+enum Frequency {
+  DAILY
+  SPECIFIC_DAYS
+  EVERY_N_HOURS
+  AS_NEEDED
+}
+
+// ─── Dose Logs ───────────────────────────────────────────────────────────────
+
+model DoseLog {
+  id          String     @id @default(cuid())
+  userId      String
+  medicineId  String
+  scheduleId  String?
+  scheduledAt DateTime?
+  takenAt     DateTime   @default(now())
+  status      DoseStatus
+  notes       String?
+  dosesTaken  Float      @default(1)
+
+  user     User      @relation(fields: [userId], references: [id])
+  medicine Medicine  @relation(fields: [medicineId], references: [id])
+  schedule Schedule? @relation(fields: [scheduleId], references: [id])
+
+  @@map("dose_logs")
+}
+
+enum DoseStatus {
+  TAKEN
+  SKIPPED
+  LATE
+}
+
+// ─── Inventory ───────────────────────────────────────────────────────────────
+
+model Inventory {
+  id                String    @id @default(cuid())
+  medicineId        String    @unique
+  currentStock      Float
+  unit              String
+  lowStockThreshold Float     @default(7)
+  expiryDate        DateTime?
+  updatedAt         DateTime  @updatedAt
+
+  medicine Medicine @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+
+  @@map("inventory")
+}
+
+// ─── Push Notifications ──────────────────────────────────────────────────────
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("push_subscriptions")
+}
