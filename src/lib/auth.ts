@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  session: { strategy: "database" },
+  session: { strategy: "jwt" },
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
@@ -40,11 +40,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id;
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token.id) {
+        session.user.id = token.id as string;
         const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
+          where: { id: token.id as string },
           select: { familyGroupId: true, adminOf: { select: { id: true } } },
         });
         (session.user as { id: string; familyGroupId?: string | null; adminOfGroupId?: string | null }).familyGroupId = dbUser?.familyGroupId ?? null;
