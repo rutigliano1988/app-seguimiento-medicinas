@@ -9,14 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, Circle, Clock, XCircle } from "lucide-react";
 import type { TodayDose } from "@/types";
 import { cn } from "@/lib/utils";
-
-function formatTime(time: string) {
-  const [hh, mm] = time.split(":");
-  const h = parseInt(hh);
-  const ampm = h >= 12 ? "PM" : "AM";
-  const h12 = h % 12 || 12;
-  return `${h12}:${mm} ${ampm}`;
-}
+import { formatLocalTime } from "@/lib/time";
 
 function DoseCard({ dose }: { dose: TodayDose }) {
   const router = useRouter();
@@ -66,7 +59,7 @@ function DoseCard({ dose }: { dose: TodayDose }) {
 
         <div className="flex items-center gap-2 shrink-0">
           <span className={cn("text-sm font-medium", isLate ? "text-amber-600" : "text-slate-500")}>
-            {formatTime(dose.scheduledTime)}
+            {formatLocalTime(dose.scheduledTime)}
           </span>
 
           {dose.status === "PENDING" && (

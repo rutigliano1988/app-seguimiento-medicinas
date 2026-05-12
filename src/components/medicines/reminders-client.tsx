@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Clock } from "lucide-react";
 import type { Schedule, Medicine } from "@/generated/prisma/client";
+import { utcTimeToLocal } from "@/lib/time";
 
 type ScheduleWithMedicine = Schedule & {
   medicine: Pick<Medicine, "id" | "name" | "color">;
@@ -67,7 +68,7 @@ export function RemindersClient({ schedules }: { schedules: ScheduleWithMedicine
                 <div className="flex gap-1 flex-wrap mt-1">
                   {schedule.times.map((t) => (
                     <Badge key={t} variant="outline" className="text-xs">
-                      <Clock size={10} className="mr-1" />{t}
+                      <Clock size={10} className="mr-1" />{utcTimeToLocal(t)}
                     </Badge>
                   ))}
                 </div>

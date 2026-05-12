@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { medicineFormSchema, type MedicineFormValues } from "@/lib/validations/medicine";
 import { Plus, Trash2, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
+import { localTimeToUTC } from "@/lib/time";
 
 const STEPS = ["Medicamento", "Horario", "Inventario"];
 const MEDICINE_FORMS = [
@@ -108,7 +109,10 @@ export function MedicineForm() {
     setLoading(true);
     const payload = {
       ...data,
-      schedule: hasSchedule ? data.schedule : undefined,
+      schedule: hasSchedule && data.schedule ? {
+        ...data.schedule,
+        times: data.schedule.times.map(localTimeToUTC),
+      } : undefined,
       inventory: hasInventory ? data.inventory : undefined,
     };
 

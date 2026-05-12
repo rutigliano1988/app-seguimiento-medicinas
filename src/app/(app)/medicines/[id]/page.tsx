@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Loader2, Package, Calendar, Clock, CheckCircle2, XCircle } from "lucide-react";
 import Link from "next/link";
+import { utcTimeToLocal } from "@/lib/time";
 
 interface Medicine {
   id: string;
@@ -167,7 +168,7 @@ export default function MedicinePage() {
                 <div className="flex items-center gap-1">
                   {s.times.map((t) => (
                     <Badge key={t} variant="outline" className="text-xs">
-                      <Clock size={10} className="mr-1" />{t}
+                      <Clock size={10} className="mr-1" />{utcTimeToLocal(t)}
                     </Badge>
                   ))}
                   <Badge variant={s.isActive ? "default" : "secondary"} className="text-xs">
