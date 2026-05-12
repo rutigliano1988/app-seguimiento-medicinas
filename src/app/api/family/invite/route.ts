@@ -50,14 +50,20 @@ export async function POST(req: NextRequest) {
     include: { sender: { select: { name: true } } },
   });
 
-  await sendFamilyInviteEmail({
-    to: email,
-    inviterName: invite.sender.name ?? "Un miembro",
-    groupName: adminGroup.name,
-    token: invite.token,
-  });
+  let emailSent = false;
+  try {
+    await sendFamilyInviteEmail({
+      to: email,
+      inviterName: invite.sender.name ?? "Un miembro",
+      groupName: adminGroup.name,
+      token: invite.token,
+    });
+    emailSent = true;
+  } catch (err) {
+    console.error("Error sending invite email:", err);
+  }
 
-  return NextResponse.json({ success: true }, { status: 201 });
+  return NextResponse.json({ success: true, emailSent, token: invite.token }, { status: 201 });
 }
 
 export async function GET(req: NextRequest) {
